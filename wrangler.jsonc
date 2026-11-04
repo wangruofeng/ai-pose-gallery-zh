@@ -2,6 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ai-pose-gallery-zh",
   "main": "worker.ts",
+  "routes": [
+    { "pattern": "ai-pose-gallery.wangruofeng007.com", "custom_domain": true }
+  ],
   "compatibility_date": "2025-10-01",
   "observability": {
     "enabled": true

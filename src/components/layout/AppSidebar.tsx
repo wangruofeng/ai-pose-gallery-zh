@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { ExternalLinkIcon, LayersIcon, SparklesIcon } from 'lucide-react'
+import { BookOpenIcon, ExternalLinkIcon, HeartHandshakeIcon, LayersIcon, SparklesIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useStudio } from '@/store/studioStore'
 import { activeNavTo, navGroups } from './nav'
+import { projectLinks } from '@/lib/projectLinks'
 
 export function AppSidebar() {
   const pathname = useLocation({ select: (l) => l.pathname })
@@ -84,19 +85,22 @@ export function AppSidebar() {
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" asChild tooltip="访问 GitHub 仓库">
-              <a
-                href="https://github.com/anhao/ai-pose-gallery-zh"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-muted-foreground"
-              >
-                <ExternalLinkIcon className="size-3.5" />
-                <span>GitHub · @anhao_ai</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+        </SidebarMenu>
+        <SidebarMenu className="flex-row gap-1 group-data-[collapsible=icon]:flex-col">
+          {[
+            { href: projectLinks.github, label: 'GitHub', title: 'wangruofeng 的项目仓库', icon: ExternalLinkIcon },
+            { href: projectLinks.blog, label: '博客', title: '王若风的技术博客', icon: BookOpenIcon },
+            { href: projectLinks.upstream, label: '鸣谢', title: '鸣谢原项目 · Anhao', icon: HeartHandshakeIcon },
+          ].map(({ href, label, title, icon: Icon }) => (
+            <SidebarMenuItem key={href} className="min-w-0 flex-1">
+              <SidebarMenuButton size="sm" asChild tooltip={title} className="justify-center gap-1 px-1 text-xs text-muted-foreground">
+                <a href={href} target="_blank" rel="noopener noreferrer" title={title} aria-label={`${title}（新窗口）`}>
+                  <Icon className="size-3.5" aria-hidden="true" />
+                  <span>{label}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />

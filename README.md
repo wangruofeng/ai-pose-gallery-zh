@@ -12,7 +12,8 @@
 
 </details>
 
-**在线演示：** <https://ai-pose-gallery.anhao.app/>
+**本站地址：** <https://ai-pose-gallery.wangruofeng007.com/>
+**上游在线演示（原中文版）：** <https://ai-pose-gallery.anhao.app/>
 **原始站点：**
 - 姿势库（白模）：<https://ai-pose-gallery.pages.dev/>
 - 姿势深度图库（Depth）：<https://ai-pose-depth-gallery.pages.dev/>
@@ -20,8 +21,13 @@
 - 人像库：<https://ai-portrait-gallery.pages.dev/>
 
 **原有图库作者：** ギア（@giaaibusi）；二次元服装作者：たき AI（[@taki_auto](https://x.com/taki_auto) · [CharaDB](https://charadb-2fi.pages.dev/)）。
-**中文版维护：** Anhao · [X @anhao_ai](https://x.com/anhao_ai)
-**GitHub：** <https://github.com/anhao/ai-pose-gallery-zh>
+**原中文版维护：** Anhao · [X @anhao_ai](https://x.com/anhao_ai)
+**当前项目维护：** 王若风（wangruofeng）
+**GitHub：** <https://github.com/wangruofeng/ai-pose-gallery-zh>
+**项目博客：** <https://wangruofeng007.com>
+**上游仓库：** <https://github.com/anhao/ai-pose-gallery-zh>
+
+**鸣谢：** 本项目基于 Anhao 的 [AI 角色参考与合成工作台 · 中文版](https://github.com/anhao/ai-pose-gallery-zh) 继续维护与优化，感谢其在图库中文整理、三库整合、AI 合成工作台及 ComfyUI 插件方面的开源贡献；同时感谢上述原始图库与素材作者。
 
 > ⚠️ **免责声明（必读）**：
 > 1. **学习与创作限定**：本项目及配套插件/工作流**仅供个人学习、人体动态研究、合法艺术创作与技术交流使用**，严禁用于任何违反法律法规、生成违法违规/淫秽色情内容或侵害他人合法权益（如未经授权的真人肖像换脸）的用途。
@@ -100,7 +106,7 @@
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes
-git clone --depth 1 https://github.com/anhao/ai-pose-gallery-zh.git
+git clone --depth 1 https://github.com/wangruofeng/ai-pose-gallery-zh.git
 ```
 
 重启 ComfyUI 后：
@@ -215,9 +221,14 @@ npx wrangler versions upload
 npx wrangler deploy
 ```
 
+本分支使用 Cloudflare Workers 部署，绑定 `ai-pose-gallery.wangruofeng007.com`，域名配置见 `wrangler.jsonc`。
+
 若使用 Cloudflare Dashboard 连接 GitHub 自动构建 Workers：
+- **Repository**：`wangruofeng/ai-pose-gallery-zh`
+- **Production branch**：`main`
 - **Build command**：`bash scripts/build.sh`
 - **Deploy command**：`npx wrangler deploy`
+- **Node.js**：`22.22.2`（由 `.nvmrc` 固定）
 
 ### 方式二：Cloudflare Pages 部署
 
@@ -250,7 +261,7 @@ npx wrangler deploy
 | `portrait-reference` | 1,499 | 人像：正脸参考・造型氛围，按发长 / 51 种发型检索 |
 
 ```bash
-git clone --depth 1 https://github.com/anhao/ai-pose-gallery-zh.git ~/ai-pose-gallery-zh
+git clone --depth 1 https://github.com/wangruofeng/ai-pose-gallery-zh.git ~/ai-pose-gallery-zh
 mkdir -p ~/.claude/skills
 for d in ~/ai-pose-gallery-zh/skills/*-reference*; do ln -s "$d" ~/.claude/skills/; done
 ```
