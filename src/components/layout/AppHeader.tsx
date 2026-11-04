@@ -81,7 +81,7 @@ export function AppHeader() {
         </Button>
         <Button variant="outline" size="sm" onClick={handleRandom} className="hidden @3xl/header:inline-flex">
           <DicesIcon className="size-3.5" />
-          随机捏人
+          随机组合
         </Button>
         <Button size="sm" asChild>
           <Link to="/studio" aria-label={`AI 合成台，已选 ${selectedCount} 项参考图`}>

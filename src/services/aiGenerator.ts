@@ -1465,7 +1465,7 @@ async function generateWithComfyUi(params: {
   }
 
   if (cp.stitchedNodeId && cp.stitchedNodeId !== 'none' && workflow[cp.stitchedNodeId]?.inputs) {
-    report({ stage: 'upload', message: '正在上传参考拼图…' })
+    report({ stage: 'upload', message: '正在上传组合参考板…' })
     const stitchedDataUrl = await stitchRecipeCanvas(recipe)
     workflow[cp.stitchedNodeId].inputs.image = await uploadImageToComfy(baseUrl, stitchedDataUrl, 'studio_stitched', apiKey)
   }

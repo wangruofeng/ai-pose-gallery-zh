@@ -42,7 +42,7 @@ function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="AI 角色参考库" />
+      <PageHeader title="角色视觉参考库" description="浏览人体姿态、服装造型与人物外观素材，组合参考图进行 AI 角色创作。" />
 
       {/* 核心数据指标卡片 */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -53,19 +53,19 @@ function DashboardPage() {
           desc="11,568 本地高清图"
         />
         <StatCard
-          title="动作姿势 (Pose)"
+          title="人体姿态 (Pose)"
           value={`${posesData.groups.length} 组`}
           icon={<PersonStandingIcon />}
           desc={`${posesData.items.length} 张 · 白模/深度`}
         />
         <StatCard
-          title="服装穿搭 (Costume)"
+          title="服装造型 (Outfit)"
           value={`${costumes.length.toLocaleString('zh-CN')} 套`}
           icon={<ShirtIcon />}
           desc="现实 1,407 · 二次元 440"
         />
         <StatCard
-          title="人像颜值 (Portrait)"
+          title="人物外观 (Appearance)"
           value={`${portraits.length.toLocaleString('zh-CN')} 张`}
           icon={<UserRoundIcon />}
           desc="CC0 协议 · 51 款发型"
@@ -79,7 +79,7 @@ function DashboardPage() {
           className="group flex flex-col justify-between rounded-[20px] bg-muted p-4 transition hover:bg-muted/70"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">动作姿势库</h2>
+            <h2 className="text-base font-semibold">人体姿态库</h2>
             <Badge variant="secondary">1,439</Badge>
           </div>
           <div className="mt-3 grid grid-cols-4 gap-1.5">
@@ -100,7 +100,7 @@ function DashboardPage() {
           className="group flex flex-col justify-between rounded-[20px] bg-muted p-4 transition hover:bg-muted/70"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">服装穿搭库</h2>
+            <h2 className="text-base font-semibold">服装造型库</h2>
             <Badge variant="secondary">{costumes.length.toLocaleString('zh-CN')}</Badge>
           </div>
           <div className="mt-3 grid grid-cols-4 gap-1.5">
@@ -121,7 +121,7 @@ function DashboardPage() {
           className="group flex flex-col justify-between rounded-[20px] bg-muted p-4 transition hover:bg-muted/70"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">人像颜值库</h2>
+            <h2 className="text-base font-semibold">人物外观库</h2>
             <Badge variant="secondary">1,499</Badge>
           </div>
           <div className="mt-3 grid grid-cols-4 gap-1.5">

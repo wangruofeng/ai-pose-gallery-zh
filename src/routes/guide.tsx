@@ -15,26 +15,26 @@ function GuidePage() {
 
       <Section title="角色合成流程" className="@lg/section:grid-cols-3">
         <div className="rounded-2xl bg-background p-4">
-          <Badge>1. 人像</Badge>
-          <h3 className="mt-2 text-sm font-semibold">人像颜值库 (1,499)</h3>
+          <Badge>1. 人物外观</Badge>
+          <h3 className="mt-2 text-sm font-semibold">人物外观库 (1,499)</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            挑选五官与发型参考，或在合成台直接上传自定义人像图，锁定角色面部特征。
+            选择五官、脸型与发型参考，或上传自定义人像，为生成结果提供人物外观依据。
           </p>
         </div>
 
         <div className="rounded-2xl bg-background p-4">
-          <Badge>2. 服装</Badge>
-          <h3 className="mt-2 text-sm font-semibold">服装穿搭库 (1,847)</h3>
+          <Badge>2. 服装造型</Badge>
+          <h3 className="mt-2 text-sm font-semibold">服装造型库 (1,847)</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             按全部 / 现实 / 二次元及分类、标签挑选；现实服装 1,407 套，CharaDB 二次元服装 440 套。二次元图片需联网并遵守独立来源条件。
           </p>
         </div>
 
         <div className="rounded-2xl bg-background p-4">
-          <Badge>3. 姿势 + 附图</Badge>
-          <h3 className="mt-2 text-sm font-semibold">动作姿势库 (1,439)</h3>
+          <Badge>3. 人体姿态与附加参考</Badge>
+          <h3 className="mt-2 text-sm font-semibold">人体姿态库 (1,439)</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            挑选 5 视角 3D 素体白模或深度图（Depth），结合云端 API 或本地 ComfyUI 一键生成角色立绘。
+            选择不同视角的 3D 素体白模作为姿态参考，或使用深度图（Depth Map）提供空间结构信息。结合云端 API 或本地 ComfyUI 生成角色图像。
           </p>
         </div>
       </Section>

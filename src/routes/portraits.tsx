@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils'
 import { useStudio } from '@/store/studioStore'
 
 export const Route = createFileRoute('/portraits')({
-  staticData: { title: '人像颜值库' },
+  staticData: { title: '人物外观库' },
   loader: ({ context }) => context.queryClient.ensureQueryData(portraitsQuery),
   pendingComponent: () => <Skeleton className="h-[540px] rounded-[22px]" />,
   component: PortraitsPage,
@@ -84,7 +84,8 @@ function PortraitsPage() {
   return (
     <>
       <PageHeader
-        title="人像颜值库"
+        title="人物外观库"
+        description="五官、脸型与发型参考，用于确定角色的外观特征与整体气质。"
         actions={
           <Button
             variant={onlyHot ? 'default' : 'outline'}

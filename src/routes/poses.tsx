@@ -29,7 +29,7 @@ import { useStudio } from '@/store/studioStore'
 import type { PoseGroup, PoseItem } from '@/types/gallery'
 
 export const Route = createFileRoute('/poses')({
-  staticData: { title: '动作姿势库' },
+  staticData: { title: '人体姿态库' },
   loader: ({ context }) => context.queryClient.ensureQueryData(posesQuery),
   pendingComponent: () => <Skeleton className="h-[540px] rounded-[22px]" />,
   component: PosesPage,
@@ -139,7 +139,8 @@ function PosesPage() {
   return (
     <>
       <PageHeader
-        title="动作姿势库"
+        title="人体姿态库"
+        description="多视角人体动态参考，提供 3D 素体白模与深度图，用于动作、构图与空间关系参考。"
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {/* 素体白模 / 深度图 切换 */}

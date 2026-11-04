@@ -29,7 +29,7 @@ import { CHARADB_NOTICE_URL } from '@/lib/charadb'
 import { useStudio } from '@/store/studioStore'
 
 export const Route = createFileRoute('/costumes')({
-  staticData: { title: '服装穿搭库' },
+  staticData: { title: '服装造型库' },
   loader: ({ context }) => context.queryClient.ensureQueryData(costumesQuery),
   pendingComponent: () => <Skeleton className="h-[540px] rounded-[22px]" />,
   component: CostumesPage,
@@ -93,7 +93,7 @@ function CostumesPage() {
 
   return (
     <>
-      <PageHeader title="服装穿搭库" />
+      <PageHeader title="服装造型库" description="浏览现实与二次元服装参考，选择款式、配色、材质及配饰组合。" />
 
       <div className="flex flex-wrap items-center justify-between gap-2" aria-label="服装一级分类">
         <div className="flex flex-wrap gap-2">
@@ -219,7 +219,7 @@ function CostumesPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState title="没有找到匹配的服装穿搭" description="试试更换搜索词或切换分类" />
+        <EmptyState title="没有找到匹配的服装造型" description="试试更换搜索词或切换分类" />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filtered.slice(0, shown).map((item, idx) => {

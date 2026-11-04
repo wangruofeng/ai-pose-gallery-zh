@@ -385,7 +385,7 @@ function StudioPage() {
     <>
       <PageHeader
         title="AI 角色合成台"
-        description="组合参考图，确认模型与提示词，生成你的角色图像。"
+        description="组合人物外观、服装造型与人体姿态参考，配置模型与提示词，生成角色图像。"
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/settings">
@@ -409,7 +409,7 @@ function StudioPage() {
         >
           {/* 1. 参考图组合 */}
           <Section
-            title="1. 参考图组合"
+            title="1. 角色参考组合"
             className="@lg/section:grid-cols-1"
             actions={
               <div className="flex flex-wrap items-center gap-1.5">
@@ -438,7 +438,7 @@ function StudioPage() {
                     onClick={handleOpenStitchModal}
                   >
                     <LayoutGridIcon className="size-3.5" />
-                    参考拼图
+                    组合参考板
                   </Button>
                 )}
               </div>
@@ -1420,7 +1420,7 @@ function StudioPage() {
               </Button>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">每个任务最多 4 张，最多同时运行 4 个任务。运行中可修改配方继续提交；同一任务中任意一张失败，后续图片停止生成。</p>
-            {!hasAnyRef && <p className="text-xs text-muted-foreground">先从图库选择，或上传至少一张参考图。</p>}
+            {!hasAnyRef && <p className="text-xs text-muted-foreground">请从图库选择或上传至少一张参考图，作为角色生成依据。</p>}
           </Section>
         </div>
 
@@ -1593,11 +1593,11 @@ function StudioPage() {
       {/* 生成结果全屏放大灯箱 */}
       <ImageViewer imageUrl={zoomImageUrl || ''} open={Boolean(zoomImageUrl)} onOpenChange={(open) => !open && setZoomImageUrl(null)} />
 
-      {/* 参考拼图独立弹窗（不占用主画布） */}
+      {/* 组合参考板独立弹窗（不占用主画布） */}
       <Dialog open={Boolean(stitchModalUrl)} onOpenChange={(o) => !o && setStitchModalUrl(null)}>
         <DialogContent className="max-h-[90dvh] w-[95vw] max-w-3xl overflow-y-auto p-4 sm:max-w-3xl">
           <DialogHeader className="flex flex-row flex-wrap items-center justify-between gap-3 pr-8">
-            <DialogTitle className="text-base">参考图拼合卡片</DialogTitle>
+            <DialogTitle className="text-base">组合参考板</DialogTitle>
             {stitchModalUrl && (
               <Button size="sm" variant="outline" asChild>
                 <a href={stitchModalUrl} download="reference-sheet.jpg">
@@ -1611,7 +1611,7 @@ function StudioPage() {
             <div className="mt-2 flex items-center justify-center overflow-hidden rounded-xl bg-muted p-2">
               <img
                 src={stitchModalUrl}
-                alt="参考拼图"
+                alt="组合参考板"
                 className="max-h-[70dvh] w-auto rounded-lg object-contain"
               />
             </div>
