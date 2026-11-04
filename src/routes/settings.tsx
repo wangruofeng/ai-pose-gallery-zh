@@ -70,6 +70,7 @@ function SettingsPage() {
     <>
       <PageHeader
         title="API 接口配置"
+        description="选择接口协议，填写连接信息，再返回合成台生成。修改会自动保存在当前浏览器。"
         actions={
           <Button size="sm" asChild>
             <Link to="/studio">
@@ -93,8 +94,9 @@ function SettingsPage() {
             <button
               key={id}
               type="button"
-              onClick={() => updateApiConfig({ activeProvider: id })}
-              className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-left transition-all ${
+              onClick={() => { setShowKey(false); updateApiConfig({ activeProvider: id }) }}
+              aria-pressed={isActive}
+              className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                 isActive
                   ? 'border-primary bg-primary/6 font-semibold shadow-xs'
                   : 'border-border/60 bg-card hover:bg-muted/40'
@@ -105,7 +107,8 @@ function SettingsPage() {
                 className={`size-2 shrink-0 rounded-full ${
                   hasKey ? 'bg-emerald-500' : 'bg-muted-foreground/30'
                 }`}
-                title={hasKey ? '已就绪' : '未配置 Key'}
+                title={hasKey ? '已填写配置，连接尚未验证' : '待填写配置'}
+                role="img" aria-label={hasKey ? '已填写配置，连接尚未验证' : '待填写配置'}
               />
             </button>
           )
@@ -154,6 +157,7 @@ function SettingsPage() {
       >
         <Field
           label={pid === 'comfyui' ? 'ComfyUI 地址 (Base URL)' : 'Base URL'}
+          htmlFor="provider-url"
           hint={
             pid === 'comfyui'
               ? `本地运行本站时填 /comfy（同源代理，无需改跨域设置）；直连时 ComfyUI 需加启动参数 --enable-cors-header "${typeof window !== 'undefined' ? window.location.origin : '*'}"。Desktop 版默认端口 8000，便携版 8188`
@@ -161,6 +165,8 @@ function SettingsPage() {
           }
         >
           <Input
+            id="provider-url"
+            autoCapitalize="none" spellCheck={false}
             type={pid === 'comfyui' ? 'text' : 'url'}
             value={pCfg.baseUrl}
             onChange={(e) => updateProviderConfig(pid, { baseUrl: e.target.value })}
@@ -168,9 +174,11 @@ function SettingsPage() {
           />
         </Field>
 
-        <Field label={pid === 'comfyui' ? 'API Key（可选，本地留空）' : 'API Key'}>
+        <Field htmlFor="provider-key" label={pid === 'comfyui' ? 'API Key（可选，本地留空）' : 'API Key'}>
           <div className="relative">
             <Input
+              id="provider-key"
+              autoComplete="off" autoCapitalize="none" spellCheck={false}
               type={showKey ? 'text' : 'password'}
               value={pCfg.apiKey}
               onChange={(e) => updateProviderConfig(pid, { apiKey: e.target.value })}
@@ -184,7 +192,9 @@ function SettingsPage() {
             <button
               type="button"
               onClick={() => setShowKey((s) => !s)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label={showKey ? '隐藏 API Key' : '显示 API Key'}
+              aria-pressed={showKey}
+              className="absolute top-1/2 right-0 flex size-10 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               {showKey ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
             </button>
@@ -197,7 +207,7 @@ function SettingsPage() {
               value={pCfg.model}
               onValueChange={(v) => updateProviderConfig(pid, { model: v })}
             >
-              <SelectTrigger className="w-full font-mono text-xs">
+              <SelectTrigger aria-label="默认模型 ID" className="w-full font-mono text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -212,8 +222,9 @@ function SettingsPage() {
         )}
 
         {pid !== 'comfyui' && pCfg.model === 'custom' && (
-          <Field label="自定义模型 ID">
+          <Field label="自定义模型 ID" htmlFor="custom-model">
             <Input
+              id="custom-model"
               value={pCfg.customModel}
               onChange={(e) => updateProviderConfig(pid, { customModel: e.target.value })}
               placeholder={pid === 'doubao' ? 'ep-2026xxxx 或模型 ID' : '输入模型 ID'}
@@ -235,25 +246,26 @@ function SettingsPage() {
               value={apiConfig.imagePassMode}
               onValueChange={(v) => updateApiConfig({ imagePassMode: v as ImagePassMode })}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label="参考图传参方式" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="url">传递图片 URL（免上传文件，推荐）</SelectItem>
-                <SelectItem value="base64">转 Base64 编码传输</SelectItem>
+                <SelectItem value="url">图片 URL（接口需能读取公网图片）</SelectItem>
+                <SelectItem value="base64">Base64（直接传输图片数据）</SelectItem>
               </SelectContent>
             </Select>
           </Field>
 
           <Field
             label="服务端 CORS 代理 (/api/proxy)"
-            hint="默认关闭（浏览器直连）；切换到阿里云百炼 (Qwen) 或火山方舟 (Doubao) 时会自动开启。仅支持白名单域名（可通过服务端环境变量 PROXY_ALLOWED_ORIGINS 扩展）"
+            hint="浏览器提示跨域错误时可开启。代理是否可用取决于当前部署环境。"
           >
             <div className="flex h-9 items-center justify-between rounded-xl border bg-background px-3">
               <span className="text-xs text-muted-foreground">
                 {apiConfig.useProxy ? '已启用（解决跨域限制）' : '已关闭（浏览器直连）'}
               </span>
               <Switch
+                aria-label="使用服务端 CORS 代理"
                 checked={apiConfig.useProxy}
                 onCheckedChange={(v) => updateApiConfig({ useProxy: v })}
               />
@@ -262,12 +274,10 @@ function SettingsPage() {
         </Section>
       )}
 
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => toast.success('配置已保存')}>
-          <CheckIcon className="size-4" />
-          保存配置
-        </Button>
-      </div>
+      <p className="flex items-center gap-2 text-xs text-muted-foreground">
+        <CheckIcon className="size-3.5" aria-hidden="true" />
+        配置自动保存在当前浏览器，无需手动保存。
+      </p>
     </>
   )
 }

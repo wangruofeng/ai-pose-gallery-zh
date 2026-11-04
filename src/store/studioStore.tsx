@@ -215,6 +215,7 @@ interface StudioContextValue {
   isGenerating: boolean
   generatingModel: string
   generationProgress: GenerationProgress | null
+  generationTiming: { startedAt: number; finishedAt: number | null } | null
   generationError: string
   startGeneration: (overridePrompt?: string) => Promise<void>
   refreshStitchPreview: () => Promise<void>
@@ -305,6 +306,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatingModel, setGeneratingModel] = useState('')
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
+  const [generationTiming, setGenerationTiming] = useState<StudioContextValue['generationTiming']>(null)
+  const finishGenerationTiming = () => setGenerationTiming((timing) => timing && timing.finishedAt === null ? { ...timing, finishedAt: Date.now() } : timing)
   const [generationError, setGenerationError] = useState('')
   const isGeneratingRef = useRef(false)
   const [activeTask, setActiveTask] = useState<ActiveTask | null>(null)
@@ -613,18 +616,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (!record?.task || isGeneratingRef.current) return
     isGeneratingRef.current = true
     setIsGenerating(true)
+    setGenerationTiming({ startedAt: Date.now(), finishedAt: null })
     setGenerationError('')
     const controller = new AbortController()
     trackingRef.current = controller
     try {
       const result = await resumeComfyTask({ task: record.task, apiKey: apiConfig.providers.comfyui.apiKey, timeoutSec: apiConfig.comfyuiParams.timeoutSec, onProgress: setGenerationProgress, signal: controller.signal })
+      finishGenerationTiming()
       controller.signal.throwIfAborted()
       await completeGeneration(result, record, controller.signal)
     } catch (e) {
       if (e instanceof ComfySubmissionRejectedError || (e instanceof ComfyTaskError && e.reason === 'failed')) { try { await saveActive(null) } catch { toast.error('任务记录清除失败') } }
       if (!controller.signal.aborted) setGenerationError(e instanceof Error ? e.message : '无法确认任务状态，记录已保留')
     }
-    finally { isGeneratingRef.current = false; setIsGenerating(false) }
+    finally { finishGenerationTiming(); isGeneratingRef.current = false; setIsGenerating(false) }
   }
   const stopTracking = async () => {
     trackingRef.current?.abort()
@@ -653,6 +658,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     let record: ActiveTask = { prompt: finalPrompt, summary: [recipeSnapshot.portrait?.发型名称, recipeSnapshot.costume?.服装名称, recipeSnapshot.pose?.姿势名称].filter(Boolean).join(' + ') || '自定义合成' }
     isGeneratingRef.current = true
     setIsGenerating(true)
+    setGenerationTiming(null)
     setGeneratingModel(configSnapshot.activeProvider)
     setGenerationError('')
     setGenerationProgress(null)
@@ -662,7 +668,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       record.snapshot = await snapshotGeneration(recipeSnapshot, configSnapshot, finalPrompt)
       controller.signal.throwIfAborted()
       if (configSnapshot.activeProvider === 'comfyui') await idbWrite(TASK_KEY, null)
-      const result = await generateCharacterImage({ recipe: recipeSnapshot, prompt: finalPrompt, config: configSnapshot, onProgress: setGenerationProgress, signal: controller.signal,
+      const result = await generateCharacterImage({ recipe: recipeSnapshot, prompt: finalPrompt, config: configSnapshot, onRequestStart: () => setGenerationTiming({ startedAt: Date.now(), finishedAt: null }), onProgress: setGenerationProgress, signal: controller.signal,
         onSubmitting: async (prepared) => {
           controller.signal.throwIfAborted()
           if (record.snapshot && prepared) record.snapshot.submittedWorkflowJson = JSON.stringify(prepared.workflow)
@@ -677,6 +683,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!controller.signal.aborted) await saveActive(record)
         },
       })
+      finishGenerationTiming()
       controller.signal.throwIfAborted()
       await completeGeneration(result, record, controller.signal)
     } catch (e) {
@@ -686,7 +693,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const msg = e instanceof Error ? e.message : '调用失败'
       setGenerationError(msg)
       toast.error(msg.split('\n')[0])
-    } finally { isGeneratingRef.current = false; setIsGenerating(false) }
+    } finally { finishGenerationTiming(); isGeneratingRef.current = false; setIsGenerating(false) }
   }
 
   return (
@@ -710,6 +717,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         isGenerating,
         generatingModel,
         generationProgress,
+        generationTiming,
         generationError,
         startGeneration,
         refreshStitchPreview,

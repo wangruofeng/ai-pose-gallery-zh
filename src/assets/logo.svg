@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>POSE &amp; CHARACTER</title>
+  <rect width="64" height="64" rx="16" fill="#18181b"/>
+  <circle cx="34" cy="16" r="5" fill="#fff"/>
+  <path d="m17 30 12-4 11 4 8-7M32 28l-3 11m0 0-9 11m9-11 13 10" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

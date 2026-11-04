@@ -1,5 +1,6 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { BookOpenIcon, ExternalLinkIcon, HeartHandshakeIcon, LayersIcon, SparklesIcon } from 'lucide-react'
+import { BookOpenIcon, ExternalLinkIcon, HeartHandshakeIcon, SparklesIcon } from 'lucide-react'
+import logoUrl from '@/assets/logo.svg'
 import { Badge } from '@/components/ui/badge'
 import {
   Sidebar,
@@ -30,9 +31,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <LayersIcon className="size-4" />
-                </div>
+                <img src={logoUrl} alt="" aria-hidden="true" className="size-8 shrink-0 rounded-lg" />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">POSE &amp; CHARACTER</span>
                   <span className="truncate text-xs text-muted-foreground">AI 角色三合一参考台</span>

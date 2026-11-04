@@ -137,3 +137,30 @@
 [data-slot="sidebar-menu-button"][data-active="true"] {
   font-weight: 600;
 }
+
+/* 交互表面沿用黑白主题，保持键盘焦点与触屏输入清晰。 */
+@layer base {
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  input, textarea {
+    caret-color: var(--primary);
+  }
+  summary {
+    text-underline-offset: 0.2em;
+  }
+  @media (max-width: 639px) {
+    input:not([type="checkbox"]):not([type="radio"]), textarea {
+      font-size: 1rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

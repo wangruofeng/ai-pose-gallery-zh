@@ -1,11 +1,10 @@
+import { GenerationTiming } from '@/components/studio/GenerationTiming'
 import { ImageViewer } from '@/components/common/ImageViewer'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
-  ChevronDownIcon,
   CircleAlertIcon,
   CircleCheckIcon,
-  ChevronUpIcon,
   CodeXmlIcon,
   CopyIcon,
   DicesIcon,
@@ -35,7 +34,7 @@ import { applyWorkflowOverrides, validateReferenceCombinations, workflowIdentity
 import { PageHeader } from '@/components/common/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -86,6 +85,7 @@ function StudioPage() {
     isGenerating,
     generatingModel,
     generationProgress,
+    generationTiming,
     generationError,
     startGeneration,
     setPortrait,
@@ -381,20 +381,21 @@ function StudioPage() {
     <>
       <PageHeader
         title="AI 角色合成台"
+        description="组合参考图，确认模型与提示词，生成你的角色图像。"
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/settings">
               <KeyRoundIcon className="size-4" />
-              {providerCfg.apiKey ? `${providerMeta.shortName} 已就绪` : '配置 API Key'}
+              {providerCfg.apiKey ? `${providerMeta.shortName} 已配置` : '配置 API Key'}
             </Link>
           </Button>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-6">
-        {/* 左栏：参考图、模型参数与 Prompt */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6 lg:[&>div>section]:h-full">
+        {/* 第一排：参考图与模型参数 */}
         <div
-          className="flex min-w-0 flex-col gap-4 lg:col-span-7"
+          className="min-w-0"
           onDragOver={(e) => {
             e.preventDefault()
             setIsDragging(true)
@@ -721,19 +722,20 @@ function StudioPage() {
             </div>
           </Section>
 
-          {/* 2. 协议、模型与可折叠高级参数 */}
+        </div>
+
+        <div className="min-w-0">
+          {/* 2. 协议、模型与高级参数弹窗 */}
+          <Dialog open={showAdvanced} onOpenChange={setShowAdvanced}>
           <Section
             title="2. 模型与参数"
             actions={
-              <Button variant="ghost" size="sm" onClick={() => setShowAdvanced((v) => !v)}>
-                <SlidersHorizontalIcon className="size-3.5" />
-                高级参数
-                {showAdvanced ? (
-                  <ChevronUpIcon className="size-3.5" />
-                ) : (
-                  <ChevronDownIcon className="size-3.5" />
-                )}
-              </Button>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <SlidersHorizontalIcon className="size-3.5" />
+                  高级参数
+                </Button>
+              </DialogTrigger>
             }
           >
             <Field label="接口协议">
@@ -741,7 +743,7 @@ function StudioPage() {
                 value={activeProvider}
                 onValueChange={(v) => updateApiConfig({ activeProvider: v as ImageProviderId })}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="接口协议" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -874,7 +876,7 @@ function StudioPage() {
                     value={providerCfg.model}
                     onValueChange={(v) => updateProviderConfig(activeProvider, { model: v })}
                   >
-                    <SelectTrigger className="w-full font-mono text-xs">
+                    <SelectTrigger aria-label="模型 ID" className="w-full font-mono text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -907,7 +909,7 @@ function StudioPage() {
                 value={apiConfig.stylePreset}
                 onValueChange={(v) => updateApiConfig({ stylePreset: v })}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label="画风预设" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1006,11 +1008,13 @@ function StudioPage() {
               </>
             )}
 
-            {activeProvider === 'comfyui' && showAdvanced && <WorkflowParameters onPreview={setZoomImageUrl} onUploadingChange={setUploadingSlot} />}
-
-            {/* 展开的高级协议专属参数 */}
-            {showAdvanced && (
-              <>
+            <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
+              <DialogHeader className="pr-8">
+                <DialogTitle>{providerMeta.name} · 高级参数</DialogTitle>
+                <DialogDescription>参数修改后即时保存，关闭弹窗后可直接生成。</DialogDescription>
+              </DialogHeader>
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                {activeProvider === 'comfyui' && <WorkflowParameters onPreview={setZoomImageUrl} onUploadingChange={setUploadingSlot} />}
                 {activeProvider === 'gemini' && (
                   <>
                     <Field label="Gemini 协议模式">
@@ -1353,17 +1357,21 @@ function StudioPage() {
                     </Field>
                   </>
                 )}
-              </>
-            )}
+              </div>
+            </DialogContent>
           </Section>
+          </Dialog>
+        </div>
 
-          {activeTask && <Section title="未决任务" className="@lg/section:grid-cols-1">
+          {activeTask && <div className="lg:col-span-2"><Section title="未决任务" className="@lg/section:grid-cols-1">
             <p className="break-all text-xs">{activeTask.task ? `任务 ${activeTask.task.promptId}：刷新后查询原任务，不重复提交。` : '提交结果未知或提交前被中断，请核对后端队列；不会自动重试提交。'}</p>
             <div className="flex flex-wrap gap-2">
               <Button disabled={isGenerating || !activeTask.task} onClick={() => void resumeGeneration()}>恢复追踪</Button>
               <Button variant="outline" onClick={() => void stopTracking()}>停止跟踪（不取消后端）</Button>
             </div>
-          </Section>}
+          </Section></div>}
+
+        <div className="min-w-0">
           {/* 3. 提示词与生成按钮 */}
           <Section
             title="3. 提示词 (Prompt)"
@@ -1389,15 +1397,16 @@ function StudioPage() {
             }
           >
             <Textarea
+              aria-label="角色生成提示词"
               value={prompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
-              rows={5}
-              className="bg-background font-mono text-xs leading-relaxed"
+              rows={12}
+              className="min-h-72 resize-y bg-background text-sm leading-7"
             />
 
             <Button
               onClick={handleGenerate}
-              disabled={!hydrated || !!activeTask || isGenerating || uploadingSlot !== null}
+              disabled={!hydrated || !hasAnyRef || !!activeTask || isGenerating || uploadingSlot !== null}
               className="h-11 w-full text-sm font-semibold"
             >
               {isGenerating ? (
@@ -1412,11 +1421,12 @@ function StudioPage() {
                 </>
               )}
             </Button>
+            {!hasAnyRef && <p className="text-xs text-muted-foreground">先从图库选择，或上传至少一张参考图。</p>}
           </Section>
         </div>
 
-        {/* 右栏：专注展示 AI 生成结果与生成状态 */}
-        <div className="min-w-0 lg:col-span-5">
+        {/* 第二排右侧：生成结果与状态 */}
+        <div className="min-w-0">
           <Section
             title="生成结果"
             className="@lg/section:grid-cols-1"
@@ -1431,6 +1441,7 @@ function StudioPage() {
               ) : null
             }
           >
+            <GenerationTiming timing={generationTiming} isGenerating={isGenerating} isComfy={activeProvider === 'comfyui'} />
             <div className="relative flex min-h-[340px] items-center justify-center overflow-hidden rounded-2xl bg-background p-4 sm:min-h-[460px]">
               {isGenerating ? (
                 <div className="flex flex-col items-center gap-3 text-center">
@@ -1464,12 +1475,25 @@ function StudioPage() {
                   </div>
                 </div>
               ) : generationError ? (
-                <div className="flex max-w-md flex-col items-center gap-2 text-center">
+                <div role="alert" className="flex w-full max-w-md flex-col items-center gap-3 text-center">
                   <CircleAlertIcon className="size-7 text-destructive" />
                   <div className="text-sm font-semibold text-destructive">生成失败</div>
-                  <p className="whitespace-pre-wrap break-all text-left text-xs leading-relaxed text-muted-foreground">
-                    {generationError}
+                  <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+                    {/invalid.image|image.data/i.test(generationError)
+                      ? '接口无法读取参考图。请在高级参数中尝试 Base64，并确认图片可正常打开。'
+                      : /safety|sexual|moderation/i.test(generationError)
+                        ? '本次内容未通过服务商审核，请使用符合其内容政策的参考图与提示词。'
+                        : /401|unauthorized|api.key/i.test(generationError)
+                          ? '接口鉴权失败，请检查 API Key 与接口地址是否匹配。'
+                          : /fetch|network|cors/i.test(generationError)
+                            ? '暂时无法连接接口，请检查服务是否运行、接口地址和跨域代理设置。'
+                            : '本次生成未完成。请核对连接配置与模型参数后重试。'}
                   </p>
+                  <details className="w-full rounded-lg border p-3 text-left text-xs text-muted-foreground">
+                    <summary className="cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-ring">查看接口错误详情</summary>
+                    <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">{generationError}</p>
+                  </details>
+                  <Button variant="outline" size="sm" asChild><Link to="/settings">检查 API 配置</Link></Button>
                   {previewUrl && (
                     <Button variant="ghost" size="sm" onClick={() => setZoomImageUrl(previewUrl)}>
                       查看上一张结果
@@ -1481,7 +1505,8 @@ function StudioPage() {
               ) : (
                 <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
                   <SparklesIcon className="size-7 opacity-35" />
-                  <span className="text-xs">点击「生成角色图」后在此处展示生成结果</span>
+                  <p className="text-sm font-medium text-foreground">等待生成</p>
+                  <p className="max-w-xs text-xs leading-relaxed">确认左侧提示词后点击「生成角色图」。生成状态、接口耗时与结果会显示在这里。</p>
                 </div>
               )}
             </div>

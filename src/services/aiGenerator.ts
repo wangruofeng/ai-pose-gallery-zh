@@ -1536,6 +1536,7 @@ export async function generateCharacterImage(params: {
   recipe: RecipeState
   prompt: string
   config: ApiConfig
+  onRequestStart?: () => void
   onProgress?: (p: GenerationProgress) => void
   onSubmitting?: (prepared?: PreparedComfyGeneration) => Promise<void>
   onSubmitted?: (task: ComfyTaskHandle) => Promise<void>
@@ -1571,6 +1572,7 @@ export async function generateCharacterImage(params: {
   const baseUrl = (pCfg.baseUrl.trim() || PROVIDER_META[provider].defaultBaseUrl).replace(/\/+$/, '')
 
   if (provider === 'comfyui') {
+    params.onRequestStart?.()
     return generateWithComfyUi({ recipe, prompt, config, baseUrl, apiKey, onProgress, onSubmitting: params.onSubmitting, onSubmitted: params.onSubmitted, signal: params.signal })
   }
 
@@ -1591,6 +1593,8 @@ export async function generateCharacterImage(params: {
   const allImageRefs: string[] = config.sendStitchedSheet
     ? [...imageRefs, await stitchRecipeCanvas(recipe)]
     : imageRefs
+
+  params.onRequestStart?.()
 
   let res: Response
   let json: any

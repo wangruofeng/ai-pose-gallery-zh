@@ -10,7 +10,7 @@ export function StatCard({ title, value, icon, desc }: { title: string; value: R
           {icon}
         </div>
       </div>
-      <div className="mt-3 truncate text-2xl leading-none font-semibold tracking-[-0.03em]">{value}</div>
+      <div className="mt-3 truncate text-2xl tabular-nums leading-none font-semibold tracking-[-0.03em]">{value}</div>
       <div className="mt-2 truncate text-xs text-muted-foreground">{desc || '\u00a0'}</div>
     </div>
   )
