@@ -1,3 +1,5 @@
+import { useGenerationJobs } from './useGenerationJobs'
+import type { GenerationJob } from '@/types/generationJob'
 import { createContext, type ReactNode, useContext, useEffect, useEffectEvent, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { isNsfwCostume, isNsfwPose } from '@/api/gallery'
@@ -13,13 +15,12 @@ import {
 } from '@/components/ui/alert-dialog'
 import { idbRead, idbWrite } from '@/lib/idbStorage'
 import { parseParameterWorkflow, workflowIdentity } from '@/lib/comfyWorkflowParameters'
-import { durableImage, snapshotGeneration } from '@/lib/generationSnapshot'
+import { durableImage } from '@/lib/generationSnapshot'
 import { recipeBackup } from '@/lib/recipeImages'
 import {
   buildRecipePrompt,
   COMFYUI_WORKFLOW_TEMPLATES,
   DEFAULT_COMFY_PRESET,
-  generateCharacterImage,
   resumeComfyTask,
   ComfyTaskError,
   ComfySubmissionRejectedError,
@@ -217,7 +218,12 @@ interface StudioContextValue {
   generationProgress: GenerationProgress | null
   generationTiming: { startedAt: number; finishedAt: number | null } | null
   generationError: string
-  startGeneration: (overridePrompt?: string) => Promise<void>
+  generationJobs: GenerationJob[]
+  jobsReady: boolean
+  resumeJobImage: (jobId: string, index: number) => void
+  forgetJobImage: (jobId: string, index: number) => Promise<void>
+  canResumeJobImage: (jobId: string, index: number) => boolean
+  startGeneration: (overridePrompt?: string, count?: number) => Promise<void>
   refreshStitchPreview: () => Promise<void>
   setPortrait: (item: PortraitItem | null) => void
   setCostume: (item: CostumeItem | null) => void
@@ -307,7 +313,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [generatingModel, setGeneratingModel] = useState('')
   const [generationProgress, setGenerationProgress] = useState<GenerationProgress | null>(null)
   const [generationTiming, setGenerationTiming] = useState<StudioContextValue['generationTiming']>(null)
-  const finishGenerationTiming = () => setGenerationTiming((timing) => timing && timing.finishedAt === null ? { ...timing, finishedAt: Date.now() } : timing)
+  const generationTimingRef = useRef<StudioContextValue['generationTiming']>(null)
+  const beginGenerationTiming = () => {
+    const timing = { startedAt: Date.now(), finishedAt: null }
+    generationTimingRef.current = timing
+    setGenerationTiming(timing)
+  }
+  const finishGenerationTiming = () => {
+    const timing = generationTimingRef.current
+    if (!timing) return undefined
+    const finished = { ...timing, finishedAt: timing.finishedAt ?? Date.now() }
+    generationTimingRef.current = finished
+    setGenerationTiming(finished)
+    return Math.max(0, finished.finishedAt - finished.startedAt)
+  }
   const [generationError, setGenerationError] = useState('')
   const isGeneratingRef = useRef(false)
   const [activeTask, setActiveTask] = useState<ActiveTask | null>(null)
@@ -597,7 +616,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     activeTaskRef.current = value
     setActiveTask(value)
   }
-  const completeGeneration = async (result: {imageUrl: string; modelUsed: string; providerUsed: ImageProviderId}, record: ActiveTask, signal: AbortSignal) => {
+  const completeGeneration = async (result: {imageUrl: string; modelUsed: string; providerUsed: ImageProviderId}, record: ActiveTask, signal: AbortSignal, durationMs?: number, durationScope: 'generation' | 'tracking' = 'generation') => {
     signal.throwIfAborted()
     const imageUrl = await durableImage(result.imageUrl)
     signal.throwIfAborted()
@@ -605,7 +624,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const id = record.task ? `comfy:${record.task.baseUrl}:${record.task.promptId}` : crypto.randomUUID()
     await persistHistory((current) => {
       signal.throwIfAborted()
-      return [{ id, createdAt: Date.now(), imageUrl, provider: result.providerUsed, model: result.modelUsed, prompt: record.prompt, recipeSummary: record.summary, snapshot: record.snapshot }, ...current.filter((x) => x.id !== id)].slice(0, 30)
+      return [{ id, createdAt: Date.now(), durationMs, durationScope, imageUrl, provider: result.providerUsed, model: result.modelUsed, prompt: record.prompt, recipeSummary: record.summary, snapshot: record.snapshot }, ...current.filter((x) => x.id !== id)].slice(0, 30)
     })
     signal.throwIfAborted()
     await saveActive(null)
@@ -616,15 +635,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (!record?.task || isGeneratingRef.current) return
     isGeneratingRef.current = true
     setIsGenerating(true)
-    setGenerationTiming({ startedAt: Date.now(), finishedAt: null })
+    setGeneratingModel('comfyui')
+    beginGenerationTiming()
     setGenerationError('')
     const controller = new AbortController()
     trackingRef.current = controller
     try {
       const result = await resumeComfyTask({ task: record.task, apiKey: apiConfig.providers.comfyui.apiKey, timeoutSec: apiConfig.comfyuiParams.timeoutSec, onProgress: setGenerationProgress, signal: controller.signal })
-      finishGenerationTiming()
+      const durationMs = finishGenerationTiming()
       controller.signal.throwIfAborted()
-      await completeGeneration(result, record, controller.signal)
+      await completeGeneration(result, record, controller.signal, durationMs, 'tracking')
     } catch (e) {
       if (e instanceof ComfySubmissionRejectedError || (e instanceof ComfyTaskError && e.reason === 'failed')) { try { await saveActive(null) } catch { toast.error('任务记录清除失败') } }
       if (!controller.signal.aborted) setGenerationError(e instanceof Error ? e.message : '无法确认任务状态，记录已保留')
@@ -649,51 +669,22 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     return () => { window.removeEventListener('online', resume); document.removeEventListener('visibilitychange', resume) }
   }, [idbHydrated, apiConfig.providers.comfyui.apiKey])
   useEffect(() => () => trackingRef.current?.abort(), [])
-  const startGeneration = async (overridePrompt?: string) => {
-    if (!idbHydrated || isGeneratingRef.current) return
-    if (activeTaskRef.current) { toast.error('存在未决任务，请先恢复或明确停止跟踪'); return }
-    const recipeSnapshot = recipe
-    const configSnapshot = apiConfig
-    const finalPrompt = overridePrompt ?? customPrompt ?? buildRecipePrompt(recipeSnapshot, configSnapshot.stylePreset, configSnapshot.activeProvider === 'comfyui' && recipeSnapshot.workflowImagesIdentity === workflowIdentity(configSnapshot.comfyuiParams.workflowJson) ? Object.values(recipeSnapshot.workflowImages || {}) : [])
-    let record: ActiveTask = { prompt: finalPrompt, summary: [recipeSnapshot.portrait?.发型名称, recipeSnapshot.costume?.服装名称, recipeSnapshot.pose?.姿势名称].filter(Boolean).join(' + ') || '自定义合成' }
-    isGeneratingRef.current = true
-    setIsGenerating(true)
-    setGenerationTiming(null)
-    setGeneratingModel(configSnapshot.activeProvider)
-    setGenerationError('')
-    setGenerationProgress(null)
-    const controller = new AbortController()
-    trackingRef.current = controller
-    try {
-      record.snapshot = await snapshotGeneration(recipeSnapshot, configSnapshot, finalPrompt)
-      controller.signal.throwIfAborted()
-      if (configSnapshot.activeProvider === 'comfyui') await idbWrite(TASK_KEY, null)
-      const result = await generateCharacterImage({ recipe: recipeSnapshot, prompt: finalPrompt, config: configSnapshot, onRequestStart: () => setGenerationTiming({ startedAt: Date.now(), finishedAt: null }), onProgress: setGenerationProgress, signal: controller.signal,
-        onSubmitting: async (prepared) => {
-          controller.signal.throwIfAborted()
-          if (record.snapshot && prepared) record.snapshot.submittedWorkflowJson = JSON.stringify(prepared.workflow)
-          await saveActive({ ...record, unknown: true })
-          controller.signal.throwIfAborted()
-        },
-        onSubmitted: async (task) => {
-          if (controller.signal.aborted) return
-          record = { ...record, task }
-          activeTaskRef.current = record
-          setActiveTask(record)
-          if (!controller.signal.aborted) await saveActive(record)
-        },
-      })
-      finishGenerationTiming()
-      controller.signal.throwIfAborted()
-      await completeGeneration(result, record, controller.signal)
-    } catch (e) {
-      if (e instanceof ComfySubmissionRejectedError || (e instanceof ComfyTaskError && e.reason === 'failed')) {
-        try { await saveActive(null) } catch { toast.error('任务失败记录未能清除，请停止跟踪后重试') }
-      }
-      const msg = e instanceof Error ? e.message : '调用失败'
-      setGenerationError(msg)
-      toast.error(msg.split('\n')[0])
-    } finally { finishGenerationTiming(); isGeneratingRef.current = false; setIsGenerating(false) }
+  const jobManager = useGenerationJobs(async (job, image, result, durationMs) => {
+    const imageUrl = await durableImage(result.imageUrl)
+    const id = `job:${job.id}:${image.index}`
+    await persistHistory(current => [{
+      id, createdAt: Date.now(), imageUrl, provider: result.providerUsed, model: result.modelUsed,
+      prompt: job.prompt, recipeSummary: job.summary, snapshot: job.snapshot, durationMs,
+      durationScope: image.durationScope || 'generation', taskId: job.id, imageIndex: image.index,
+    }, ...current.filter(item => item.id !== id)].slice(0, 30))
+    setPreviewUrl(imageUrl)
+    return imageUrl
+  })
+  const startGeneration = async (overridePrompt?: string, count = 1) => {
+    if (!idbHydrated || !jobManager.ready) return
+    if (activeTaskRef.current) { toast.error('请先处理此前遗留的未决任务，再提交新任务'); return }
+    const finalPrompt = overridePrompt ?? customPrompt ?? buildRecipePrompt(recipe, apiConfig.stylePreset)
+    jobManager.submit(recipe, apiConfig, finalPrompt, count)
   }
 
   return (
@@ -720,6 +711,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         generationTiming,
         generationError,
         startGeneration,
+        generationJobs: jobManager.jobs,
+        jobsReady: jobManager.ready,
+        resumeJobImage: (id, index) => jobManager.resume(id, index, apiConfig),
+        forgetJobImage: jobManager.forget,
+        canResumeJobImage: jobManager.canResume,
         refreshStitchPreview,
         setPortrait,
         setCostume,

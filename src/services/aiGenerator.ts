@@ -397,14 +397,16 @@ function dataUrlToBlob(dataUrl: string): Blob {
 async function smartFetch(
   targetUrl: string,
   init: RequestInit,
-  useProxy: boolean
+  useProxy: boolean,
+  signal?: AbortSignal
 ): Promise<Response> {
   if (!useProxy) {
-    return fetch(targetUrl, init)
+    return fetch(targetUrl, { ...init, signal })
   }
   const headers = new Headers(init.headers)
   headers.set('x-target-url', targetUrl)
   return fetch('/api/proxy', {
+    signal,
     method: init.method || 'POST',
     headers,
     body: init.body,
@@ -1630,7 +1632,7 @@ export async function generateCharacterImage(params: {
           },
           body: JSON.stringify(payload),
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     } else if (g.endpointMode === 'images_edits') {
@@ -1655,7 +1657,7 @@ export async function generateCharacterImage(params: {
           headers: { Authorization: `Bearer ${apiKey}` },
           body: fd,
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     } else if (g.endpointMode === 'responses') {
@@ -1685,7 +1687,7 @@ export async function generateCharacterImage(params: {
             tools: [toolCfg],
           }),
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     } else {
@@ -1708,7 +1710,7 @@ export async function generateCharacterImage(params: {
             modalities: ['text', 'image'],
           }),
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     }
@@ -1751,7 +1753,7 @@ export async function generateCharacterImage(params: {
             },
           }),
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     } else {
@@ -1774,7 +1776,7 @@ export async function generateCharacterImage(params: {
             modalities: ['text', 'image'],
           }),
         },
-        config.useProxy
+        config.useProxy, params.signal
       )
       json = await res.json()
     }
@@ -1821,7 +1823,7 @@ export async function generateCharacterImage(params: {
           },
         }),
       },
-      config.useProxy
+      config.useProxy, params.signal
     )
     json = await res.json()
   }
@@ -1857,7 +1859,7 @@ export async function generateCharacterImage(params: {
           response_format: db.responseFormat,
         }),
       },
-      config.useProxy
+      config.useProxy, params.signal
     )
     json = await res.json()
   }

@@ -155,6 +155,12 @@ export interface ApiConfig {
 }
 
 export interface GenerationHistoryItem {
+  taskId?: string
+  imageIndex?: number
+  /** 接口调用耗时（毫秒），旧记录没有此字段。 */
+  durationMs?: number
+  /** 恢复 ComfyUI 时只能测量本次跟踪时长。 */
+  durationScope?: 'generation' | 'tracking'
   id: string
   createdAt: number
   provider: ImageProviderId

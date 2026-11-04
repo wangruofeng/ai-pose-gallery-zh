@@ -1,9 +1,11 @@
+import { GenerationJobs } from '@/components/studio/GenerationJobs'
 import { GenerationTiming } from '@/components/studio/GenerationTiming'
 import { ImageViewer } from '@/components/common/ImageViewer'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   CircleAlertIcon,
+  Clock3Icon,
   CircleCheckIcon,
   CodeXmlIcon,
   CopyIcon,
@@ -86,6 +88,7 @@ function StudioPage() {
     generatingModel,
     generationProgress,
     generationTiming,
+    generationJobs, jobsReady, resumeJobImage, forgetJobImage, canResumeJobImage,
     generationError,
     startGeneration,
     setPortrait,
@@ -122,6 +125,7 @@ function StudioPage() {
   const activeWorkflowImages = activeProvider === 'comfyui' && recipe.workflowImagesIdentity === workflowIdentity(apiConfig.comfyuiParams.workflowJson) ? Object.values(recipe.workflowImages || {}) : []
   const defaultPrompt = buildRecipePrompt(recipe, apiConfig.stylePreset, activeWorkflowImages)
   const prompt = customPrompt ?? defaultPrompt
+  const [imageCount, setImageCount] = useState(1)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [extraUrlInput, setExtraUrlInput] = useState('')
   const [showUrlInput, setShowUrlInput] = useState(false)
@@ -374,7 +378,7 @@ function StudioPage() {
       requestAnimationFrame(() => referenceErrorsRef.current?.focus())
       return
     }
-    void startGeneration(prompt)
+    void startGeneration(prompt, imageCount)
   }
 
   return (
@@ -1404,23 +1408,18 @@ function StudioPage() {
               className="min-h-72 resize-y bg-background text-sm leading-7"
             />
 
-            <Button
-              onClick={handleGenerate}
-              disabled={!hydrated || !hasAnyRef || !!activeTask || isGenerating || uploadingSlot !== null}
-              className="h-11 w-full text-sm font-semibold"
-            >
-              {isGenerating ? (
-                <>
-                  <LoaderCircleIcon className="size-4 animate-spin" />
-                  生成中…
-                </>
-              ) : (
-                <>
-                  <SparklesIcon className="size-4" />
-                  生成角色图
-                </>
-              )}
-            </Button>
+            <div className="grid gap-3 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-end">
+              <Field label="每个任务图片数" htmlFor="job-image-count">
+                <Select value={String(imageCount)} onValueChange={value => setImageCount(Number(value))}>
+                  <SelectTrigger id="job-image-count" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>{[1, 2, 3, 4].map(count => <SelectItem key={count} value={String(count)}>{count} 张</SelectItem>)}</SelectContent>
+                </Select>
+              </Field>
+              <Button onClick={handleGenerate} disabled={!hydrated || !jobsReady || !hasAnyRef || !!activeTask || uploadingSlot !== null} className="h-11 w-full text-sm font-semibold">
+                <SparklesIcon className="size-4" />提交任务 · {imageCount} 张
+              </Button>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">每个任务最多 4 张，最多同时运行 4 个任务。运行中可修改配方继续提交；同一任务中任意一张失败，后续图片停止生成。</p>
             {!hasAnyRef && <p className="text-xs text-muted-foreground">先从图库选择，或上传至少一张参考图。</p>}
           </Section>
         </div>
@@ -1441,6 +1440,8 @@ function StudioPage() {
               ) : null
             }
           >
+            {generationJobs.length > 0 && <GenerationJobs jobs={generationJobs} onPreview={setZoomImageUrl} onReuse={setCustomPrompt} onResume={resumeJobImage} onForget={forgetJobImage} canResume={canResumeJobImage} />}
+            {(generationJobs.length === 0 || isGenerating) && <>
             <GenerationTiming timing={generationTiming} isGenerating={isGenerating} isComfy={activeProvider === 'comfyui'} />
             <div className="relative flex min-h-[340px] items-center justify-center overflow-hidden rounded-2xl bg-background p-4 sm:min-h-[460px]">
               {isGenerating ? (
@@ -1510,6 +1511,7 @@ function StudioPage() {
                 </div>
               )}
             </div>
+            </>}
           </Section>
         </div>
       </div>
@@ -1557,6 +1559,12 @@ function StudioPage() {
 
               <div className="mt-2 space-y-1.5 px-0.5">
                 <div className="truncate text-xs font-medium">{h.recipeSummary}</div>
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock3Icon className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span className="tabular-nums">{typeof h.durationMs === 'number' && Number.isFinite(h.durationMs) && h.durationMs >= 0
+                    ? `${h.durationScope === 'tracking' ? '本次跟踪' : '生成耗时'} ${(h.durationMs / 1000).toFixed(1)} 秒`
+                    : '耗时未记录'}</span>
+                </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     type="button"
