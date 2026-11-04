@@ -223,6 +223,8 @@ npx wrangler deploy
 
 本分支使用 Cloudflare Workers 部署，绑定 `ai-pose-gallery.wangruofeng007.com`，域名配置见 `wrangler.jsonc`。
 
+2026-11-04 已完成首次生产部署，并为当前仓库配置 GitHub App 授权与 `main` 分支自动构建。图片、数据和前端文件使用静态 Assets；只有 `/api/*` 优先进入 Worker，不创建 R2、D1、KV 或容器资源，也不升级付费套餐。外部 AI 生图接口由使用者自行配置，费用按对应服务商规则计算。
+
 若使用 Cloudflare Dashboard 连接 GitHub 自动构建 Workers：
 - **Repository**：`wangruofeng/ai-pose-gallery-zh`
 - **Production branch**：`main`
